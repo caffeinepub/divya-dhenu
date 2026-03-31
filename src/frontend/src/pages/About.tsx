@@ -186,7 +186,12 @@ export default function About() {
                 <img
                   src="/assets/generated/desi-ghee.dim_600x600.jpg"
                   alt="Traditional Desi Ghee"
-                  style={{ width: "100%", display: "block" }}
+                  style={{
+                    width: "100%",
+                    maxHeight: 360,
+                    objectFit: "cover",
+                    display: "block",
+                  }}
                 />
               </div>
             </div>
@@ -219,7 +224,12 @@ export default function About() {
                 <img
                   src="/assets/generated/agarbatti.dim_600x600.jpg"
                   alt="Natural Agarbatti"
-                  style={{ width: "100%", display: "block" }}
+                  style={{
+                    width: "100%",
+                    maxHeight: 360,
+                    objectFit: "cover",
+                    display: "block",
+                  }}
                 />
               </div>
             </div>

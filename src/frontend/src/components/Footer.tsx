@@ -18,7 +18,8 @@ export default function Footer() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(min(200px, 100%), 1fr))",
             gap: "2.5rem",
             marginBottom: "3rem",
           }}
@@ -34,7 +35,7 @@ export default function Footer() {
               }}
             >
               <img
-                src="/assets/whatsapp_image_2026-03-31_at_2.33.22_pm-019d4368-ccbb-73cb-9a80-5c3f105026ac.jpeg"
+                src="/assets/whatsapp_image_2026-03-31_at_2.33.22_pm-019d4380-296b-750f-b207-3de04050b4dd.jpeg"
                 alt="Divya Dhenu"
                 style={{
                   width: 44,

@@ -42,7 +42,7 @@ export default function Header() {
           data-ocid="header.link"
         >
           <img
-            src="/assets/whatsapp_image_2026-03-31_at_2.33.22_pm-019d4368-ccbb-73cb-9a80-5c3f105026ac.jpeg"
+            src="/assets/whatsapp_image_2026-03-31_at_2.33.22_pm-019d4380-296b-750f-b207-3de04050b4dd.jpeg"
             alt="Divya Dhenu Logo"
             style={{
               width: 46,
@@ -68,7 +68,7 @@ export default function Header() {
         {/* Desktop Nav */}
         <nav
           className="hidden md:flex"
-          style={{ gap: "2rem", alignItems: "center", display: "flex" }}
+          style={{ gap: "2rem", alignItems: "center" }}
         >
           {navLinks.map((link) => {
             const isActive =

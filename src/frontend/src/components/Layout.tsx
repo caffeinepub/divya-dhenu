@@ -1,5 +1,6 @@
 import { Outlet } from "@tanstack/react-router";
 import AnnouncementBar from "./AnnouncementBar";
+import DeliveryBar from "./DeliveryBar";
 import Footer from "./Footer";
 import Header from "./Header";
 
@@ -15,6 +16,7 @@ export default function Layout() {
     >
       <AnnouncementBar />
       <Header />
+      <DeliveryBar />
       <main style={{ flex: 1 }}>
         <Outlet />
       </main>

@@ -1,5 +1,5 @@
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Loader2, LogIn, UserPlus } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { Eye, EyeOff, Loader2, Lock, Mail, Phone, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useActor } from "../hooks/useActor";
@@ -12,9 +12,31 @@ export default function Login() {
   const { actor } = useActor();
 
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [regForm, setRegForm] = useState({ email: "", password: "" });
-  const [regErrors, setRegErrors] = useState({ email: "", password: "" });
+  const [inputTab, setInputTab] = useState<"mobile" | "email">("mobile");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const [loginForm, setLoginForm] = useState({
+    mobile: "",
+    email: "",
+    password: "",
+  });
+  const [regForm, setRegForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirm: "",
+  });
+  const [regErrors, setRegErrors] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirm: "",
+  });
   const [registering, setRegistering] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
   const [loggedInProfile, setLoggedInProfile] = useState<{
     email: string;
   } | null>(null);
@@ -32,9 +54,7 @@ export default function Login() {
     ) {
       actor
         .getCallerUserProfile()
-        .then((profile) => {
-          setLoggedInProfile(profile);
-        })
+        .then((profile) => setLoggedInProfile(profile))
         .catch(() => {});
     }
   }, [isLoginSuccess, actor, identity]);
@@ -45,42 +65,146 @@ export default function Login() {
       identity &&
       !identity.getPrincipal().isAnonymous());
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoggingIn(true);
+    try {
+      await login();
+    } catch {
+      toast.error("Login failed. Please try again.");
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    const errs = { email: "", password: "" };
+    const errs = {
+      fullName: "",
+      email: "",
+      phone: "",
+      password: "",
+      confirm: "",
+    };
     let valid = true;
-    if (!regForm.email.trim()) {
-      errs.email = "Email is required.";
+    if (!regForm.fullName.trim()) {
+      errs.fullName = "Full name is required.";
       valid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regForm.email)) {
+    }
+    if (
+      !regForm.email.trim() ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regForm.email)
+    ) {
       errs.email = "Enter a valid email.";
       valid = false;
     }
-    if (!regForm.password.trim() || regForm.password.length < 6) {
+    if (!regForm.phone.trim() || !/^[6-9]\d{9}$/.test(regForm.phone)) {
+      errs.phone = "Enter a valid 10-digit mobile number.";
+      valid = false;
+    }
+    if (regForm.password.length < 6) {
       errs.password = "Password must be at least 6 characters.";
+      valid = false;
+    }
+    if (regForm.password !== regForm.confirm) {
+      errs.confirm = "Passwords do not match.";
       valid = false;
     }
     setRegErrors(errs);
     if (!valid) return;
-
     setRegistering(true);
     try {
       await actor?.createUser(regForm.email, regForm.password);
-      toast.success(
-        "Account created! You can now connect with Internet Identity.",
-      );
+      toast.success("Account created! Please sign in.");
       setMode("login");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Registration failed.";
-      toast.error(msg);
+      toast.error(err instanceof Error ? err.message : "Registration failed.");
     } finally {
       setRegistering(false);
     }
   };
 
-  const handleContinueShopping = async () => {
-    await navigate({ to: "/products" });
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "0.72rem 1rem 0.72rem 2.6rem",
+    border: "1.5px solid #e8dfc9",
+    borderRadius: 999,
+    background: "#faf7f0",
+    fontSize: "0.9rem",
+    color: "#3d2c0e",
+    outline: "none",
+    fontFamily: "'Lato', sans-serif",
+    boxSizing: "border-box" as const,
+    transition: "border-color 0.2s, box-shadow 0.2s",
   };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: "0.7rem",
+    fontWeight: 700,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase" as const,
+    color: "#8b6914",
+    marginBottom: 6,
+  };
+
+  const iconStyle: React.CSSProperties = {
+    position: "absolute",
+    left: 14,
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "#c7a24b",
+    pointerEvents: "none",
+  };
+
+  const goldBtn: React.CSSProperties = {
+    width: "100%",
+    padding: "0.8rem 1rem",
+    background: "linear-gradient(135deg, #c7a24b, #e8c96e, #b8892a)",
+    border: "none",
+    borderRadius: 999,
+    color: "#fff",
+    fontFamily: "'Lato', sans-serif",
+    fontWeight: 800,
+    fontSize: "0.9rem",
+    letterSpacing: "0.12em",
+    textTransform: "uppercase" as const,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    boxShadow: "0 4px 16px rgba(199,162,75,0.3)",
+    transition: "opacity 0.2s, transform 0.15s",
+  };
+
+  const fieldFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = "#c7a24b";
+    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(199,162,75,0.15)";
+  };
+  const fieldBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = "#e8dfc9";
+    e.currentTarget.style.boxShadow = "none";
+  };
+
+  const pillTabs = (active: boolean): React.CSSProperties => ({
+    flex: 1,
+    padding: "0.55rem 0.5rem",
+    border: "none",
+    borderRadius: 999,
+    background: active
+      ? "linear-gradient(135deg,#c7a24b,#e8c96e,#b8892a)"
+      : "transparent",
+    color: active ? "#fff" : "#8b6914",
+    fontFamily: "'Lato', sans-serif",
+    fontWeight: 700,
+    fontSize: "0.82rem",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase" as const,
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    boxShadow: active ? "0 2px 8px rgba(199,162,75,0.3)" : "none",
+  });
 
   return (
     <div
@@ -89,60 +213,38 @@ export default function Login() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "var(--ivory)",
+        background:
+          "radial-gradient(ellipse at 20% 30%, rgba(199,162,75,0.1) 0%, transparent 55%), radial-gradient(ellipse at 80% 70%, rgba(199,162,75,0.07) 0%, transparent 55%), #faf7f0",
         padding: "2rem 1.5rem",
       }}
       data-ocid="login.panel"
     >
       <div
         style={{
-          position: "fixed",
-          inset: 0,
-          backgroundImage:
-            "radial-gradient(circle at 20% 30%, rgba(199,162,75,0.08) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(199,162,75,0.06) 0%, transparent 50%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      <div
-        style={{
           background: "#fff",
           borderRadius: 16,
-          boxShadow: "0 8px 40px rgba(60,40,20,0.14)",
-          border: "1px solid var(--sand)",
+          boxShadow: "0 8px 48px rgba(60,40,20,0.13)",
+          border: "1px solid #e8dfc9",
           padding: "2.5rem 2rem",
           width: "100%",
-          maxWidth: 440,
+          maxWidth: 460,
           position: "relative",
         }}
       >
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
           <img
-            src="/assets/whatsapp_image_2026-03-31_at_2.33.22_pm-019d4368-ccbb-73cb-9a80-5c3f105026ac.jpeg"
+            src="/assets/whatsapp_image_2026-03-31_at_2.33.22_pm-019d4380-296b-750f-b207-3de04050b4dd.jpeg"
             alt="Divya Dhenu"
             style={{
-              width: 64,
-              height: 64,
+              width: 56,
+              height: 56,
               objectFit: "contain",
               borderRadius: "50%",
-              border: "2px solid var(--gold)",
-              marginBottom: 12,
+              border: "2px solid #c7a24b",
+              marginBottom: 10,
             }}
           />
-          <h1
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: "1.7rem",
-              fontWeight: 700,
-              color: "var(--brown-dark)",
-              marginBottom: 4,
-            }}
-          >
-            Divya Dhenu
-          </h1>
-          <p style={{ color: "var(--brown-light)", fontSize: "0.88rem" }}>
-            Sacred products for the sacred home
-          </p>
         </div>
 
         {isLoggedIn ? (
@@ -151,9 +253,9 @@ export default function Login() {
             <h2
               style={{
                 fontFamily: "'Playfair Display', serif",
-                fontSize: "1.4rem",
+                fontSize: "1.5rem",
                 fontWeight: 700,
-                color: "var(--brown-dark)",
+                color: "#3d2c0e",
                 marginBottom: 8,
               }}
             >
@@ -162,7 +264,7 @@ export default function Login() {
             {loggedInProfile?.email && (
               <p
                 style={{
-                  color: "var(--brown-light)",
+                  color: "#8b6914",
                   marginBottom: 24,
                   fontSize: "0.9rem",
                 }}
@@ -173,9 +275,8 @@ export default function Login() {
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <button
                 type="button"
-                onClick={handleContinueShopping}
-                className="btn-gold"
-                style={{ width: "100%" }}
+                onClick={() => navigate({ to: "/products" })}
+                style={goldBtn}
                 data-ocid="login.primary_button"
               >
                 Continue Shopping
@@ -183,8 +284,13 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => clear()}
-                className="btn-gold-outline"
-                style={{ width: "100%" }}
+                style={{
+                  ...goldBtn,
+                  background: "none",
+                  color: "#8b6914",
+                  border: "1.5px solid #e8dfc9",
+                  boxShadow: "none",
+                }}
                 data-ocid="login.secondary_button"
               >
                 Sign Out
@@ -193,11 +299,15 @@ export default function Login() {
           </div>
         ) : (
           <>
+            {/* Mode toggle pills */}
             <div
               style={{
                 display: "flex",
-                borderBottom: "2px solid var(--sand)",
+                background: "#faf7f0",
+                borderRadius: 999,
+                padding: 4,
                 marginBottom: 28,
+                gap: 4,
               }}
             >
               {(["login", "register"] as const).map((m) => (
@@ -205,130 +315,425 @@ export default function Login() {
                   key={m}
                   type="button"
                   onClick={() => setMode(m)}
-                  style={{
-                    flex: 1,
-                    padding: "0.6rem",
-                    background: "none",
-                    border: "none",
-                    borderBottom:
-                      mode === m ? "2.5px solid var(--gold)" : "none",
-                    marginBottom: -2,
-                    fontFamily: "'Lato', sans-serif",
-                    fontWeight: mode === m ? 700 : 500,
-                    color: mode === m ? "var(--gold)" : "var(--brown-light)",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    transition: "color 0.2s ease",
-                  }}
+                  style={pillTabs(mode === m)}
                   data-ocid="login.tab"
                 >
-                  {m === "login" ? "Sign In" : "Register"}
+                  {m === "login" ? "Sign In" : "Create Account"}
                 </button>
               ))}
             </div>
 
             {mode === "login" ? (
-              <div style={{ textAlign: "center" }}>
+              /* ── SIGN IN ── */
+              <form onSubmit={handleLogin} noValidate>
+                <h1
+                  style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontSize: "1.75rem",
+                    fontWeight: 700,
+                    color: "#3d2c0e",
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    textAlign: "center",
+                    marginBottom: 4,
+                  }}
+                >
+                  Welcome Back
+                </h1>
                 <p
                   style={{
-                    color: "var(--brown-mid)",
+                    textAlign: "center",
+                    fontStyle: "italic",
+                    color: "#8b6914",
+                    fontSize: "0.88rem",
                     marginBottom: 24,
-                    lineHeight: 1.65,
-                    fontSize: "0.92rem",
                   }}
                 >
-                  Connect securely with <strong>Internet Identity</strong> — no
-                  passwords needed, no data stored.
+                  Sign in to your account
                 </p>
-                <button
-                  type="button"
-                  onClick={login}
-                  disabled={isLoggingIn}
-                  className="btn-gold"
+
+                {/* Mobile / Email pills */}
+                <div
                   style={{
-                    width: "100%",
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 10,
+                    background: "#faf7f0",
+                    borderRadius: 999,
+                    padding: 4,
+                    marginBottom: 20,
+                    gap: 4,
                   }}
-                  data-ocid="login.primary_button"
                 >
-                  {isLoggingIn ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" /> Connecting…
-                    </>
+                  {(["mobile", "email"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setInputTab(t)}
+                      style={{
+                        flex: 1,
+                        padding: "0.5rem",
+                        border: "none",
+                        borderRadius: 999,
+                        background:
+                          inputTab === t
+                            ? "linear-gradient(135deg,#c7a24b,#e8c96e,#b8892a)"
+                            : "#fff",
+                        color: inputTab === t ? "#fff" : "#8b6914",
+                        fontFamily: "'Lato', sans-serif",
+                        fontWeight: 700,
+                        fontSize: "0.78rem",
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase" as const,
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        boxShadow:
+                          inputTab === t
+                            ? "0 2px 8px rgba(199,162,75,0.25)"
+                            : "none",
+                      }}
+                      data-ocid="login.toggle"
+                    >
+                      {t === "mobile" ? "📱 Mobile" : "✉ Email"}
+                    </button>
+                  ))}
+                </div>
+
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 16 }}
+                >
+                  {inputTab === "mobile" ? (
+                    <div>
+                      <label htmlFor="login-mobile" style={labelStyle}>
+                        Mobile Number
+                      </label>
+                      <div style={{ position: "relative" }}>
+                        <Phone size={15} style={iconStyle} />
+                        <input
+                          id="login-mobile"
+                          type="tel"
+                          placeholder="10-digit mobile number"
+                          value={loginForm.mobile}
+                          onChange={(e) =>
+                            setLoginForm((f) => ({
+                              ...f,
+                              mobile: e.target.value,
+                            }))
+                          }
+                          style={inputStyle}
+                          onFocus={fieldFocus}
+                          onBlur={fieldBlur}
+                          data-ocid="login.input"
+                        />
+                      </div>
+                    </div>
                   ) : (
-                    <>
-                      <LogIn size={18} /> Connect with Internet Identity
-                    </>
+                    <div>
+                      <label htmlFor="login-email" style={labelStyle}>
+                        Email
+                      </label>
+                      <div style={{ position: "relative" }}>
+                        <Mail size={15} style={iconStyle} />
+                        <input
+                          id="login-email"
+                          type="email"
+                          placeholder="you@example.com"
+                          value={loginForm.email}
+                          onChange={(e) =>
+                            setLoginForm((f) => ({
+                              ...f,
+                              email: e.target.value,
+                            }))
+                          }
+                          style={inputStyle}
+                          onFocus={fieldFocus}
+                          onBlur={fieldBlur}
+                          data-ocid="login.input"
+                        />
+                      </div>
+                    </div>
                   )}
-                </button>
-                <p
-                  style={{
-                    marginTop: 20,
-                    color: "var(--brown-light)",
-                    fontSize: "0.82rem",
-                  }}
-                >
-                  Don't have an account?{" "}
+
+                  {/* Password */}
+                  <div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 6,
+                      }}
+                    >
+                      <label
+                        htmlFor="login-password"
+                        style={{ ...labelStyle, marginBottom: 0 }}
+                      >
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#c7a24b",
+                          fontSize: "0.78rem",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                        data-ocid="login.secondary_button"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                    <div style={{ position: "relative" }}>
+                      <Lock size={15} style={iconStyle} />
+                      <input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Your password"
+                        value={loginForm.password}
+                        onChange={(e) =>
+                          setLoginForm((f) => ({
+                            ...f,
+                            password: e.target.value,
+                          }))
+                        }
+                        style={{ ...inputStyle, paddingRight: "4rem" }}
+                        onFocus={fieldFocus}
+                        onBlur={fieldBlur}
+                        data-ocid="login.input"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        style={{
+                          position: "absolute",
+                          right: 14,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          background: "none",
+                          border: "none",
+                          color: "#8b6914",
+                          cursor: "pointer",
+                          padding: 0,
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                        data-ocid="login.toggle"
+                      >
+                        {showPassword ? (
+                          <EyeOff size={14} />
+                        ) : (
+                          <Eye size={14} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    style={{
+                      ...goldBtn,
+                      opacity: loggingIn || isLoggingIn ? 0.75 : 1,
+                    }}
+                    disabled={loggingIn || isLoggingIn}
+                    data-ocid="login.submit_button"
+                  >
+                    {loggingIn || isLoggingIn ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" /> Signing
+                        in…
+                      </>
+                    ) : (
+                      "Log In"
+                    )}
+                  </button>
+
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 10 }}
+                  >
+                    <div
+                      style={{ flex: 1, height: 1, background: "#e8dfc9" }}
+                    />
+                    <span
+                      style={{
+                        fontSize: "0.72rem",
+                        color: "#b8a070",
+                        fontWeight: 600,
+                      }}
+                    >
+                      OR
+                    </span>
+                    <div
+                      style={{ flex: 1, height: 1, background: "#e8dfc9" }}
+                    />
+                  </div>
+
                   <button
                     type="button"
-                    onClick={() => setMode("register")}
+                    onClick={login}
+                    disabled={isLoggingIn}
                     style={{
-                      background: "none",
-                      border: "none",
-                      color: "var(--gold)",
-                      cursor: "pointer",
+                      width: "100%",
+                      padding: "0.72rem 1rem",
+                      border: "1.5px solid #e8dfc9",
+                      borderRadius: 999,
+                      background: "#faf7f0",
+                      color: "#3d2c0e",
+                      fontFamily: "'Lato', sans-serif",
                       fontWeight: 700,
                       fontSize: "0.82rem",
+                      letterSpacing: "0.05em",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      transition: "border-color 0.2s",
                     }}
                     data-ocid="login.secondary_button"
                   >
-                    Create one here
+                    🔐 Connect with Internet Identity
                   </button>
-                </p>
-              </div>
+
+                  <p
+                    style={{
+                      textAlign: "center",
+                      fontSize: "0.82rem",
+                      color: "#8b6914",
+                      margin: 0,
+                    }}
+                  >
+                    New here?{" "}
+                    <button
+                      type="button"
+                      onClick={() => setMode("register")}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#c7a24b",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        fontSize: "0.82rem",
+                      }}
+                      data-ocid="login.tab"
+                    >
+                      Create an account
+                    </button>
+                  </p>
+                  <p style={{ textAlign: "center", margin: 0 }}>
+                    <button
+                      type="button"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#b8a070",
+                        fontSize: "0.78rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Staff portal
+                    </button>
+                  </p>
+                </div>
+              </form>
             ) : (
+              /* ── CREATE ACCOUNT ── */
               <form
                 onSubmit={handleRegister}
                 noValidate
                 data-ocid="login.panel"
               >
+                <h1
+                  style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontSize: "1.75rem",
+                    fontWeight: 700,
+                    color: "#3d2c0e",
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    textAlign: "center",
+                    marginBottom: 4,
+                  }}
+                >
+                  Create Account
+                </h1>
+                <p
+                  style={{
+                    textAlign: "center",
+                    fontStyle: "italic",
+                    color: "#8b6914",
+                    fontSize: "0.88rem",
+                    marginBottom: 24,
+                  }}
+                >
+                  Join us for faster checkout and order history
+                </p>
+
                 <div
-                  style={{ display: "flex", flexDirection: "column", gap: 18 }}
+                  style={{ display: "flex", flexDirection: "column", gap: 16 }}
                 >
                   <div>
-                    <label
-                      htmlFor="reg-email"
-                      style={{
-                        display: "block",
-                        fontWeight: 600,
-                        color: "var(--brown-dark)",
-                        fontSize: "0.85rem",
-                        marginBottom: 6,
-                      }}
-                    >
-                      Email Address *
+                    <label htmlFor="reg-fullname" style={labelStyle}>
+                      Full Name
                     </label>
-                    <input
-                      id="reg-email"
-                      className="form-input"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={regForm.email}
-                      onChange={(e) =>
-                        setRegForm((f) => ({ ...f, email: e.target.value }))
-                      }
-                      data-ocid="login.input"
-                    />
+                    <div style={{ position: "relative" }}>
+                      <User size={15} style={iconStyle} />
+                      <input
+                        id="reg-fullname"
+                        type="text"
+                        placeholder="Your full name"
+                        value={regForm.fullName}
+                        onChange={(e) =>
+                          setRegForm((f) => ({
+                            ...f,
+                            fullName: e.target.value,
+                          }))
+                        }
+                        style={inputStyle}
+                        onFocus={fieldFocus}
+                        onBlur={fieldBlur}
+                        data-ocid="login.input"
+                      />
+                    </div>
+                    {regErrors.fullName && (
+                      <p
+                        style={{
+                          color: "#c0392b",
+                          fontSize: "0.75rem",
+                          marginTop: 4,
+                        }}
+                        data-ocid="login.error_state"
+                      >
+                        {regErrors.fullName}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="reg-email" style={labelStyle}>
+                      Email
+                    </label>
+                    <div style={{ position: "relative" }}>
+                      <Mail size={15} style={iconStyle} />
+                      <input
+                        id="reg-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={regForm.email}
+                        onChange={(e) =>
+                          setRegForm((f) => ({ ...f, email: e.target.value }))
+                        }
+                        style={inputStyle}
+                        onFocus={fieldFocus}
+                        onBlur={fieldBlur}
+                        data-ocid="login.input"
+                      />
+                    </div>
                     {regErrors.email && (
                       <p
                         style={{
                           color: "#c0392b",
-                          fontSize: "0.78rem",
+                          fontSize: "0.75rem",
                           marginTop: 4,
                         }}
                         data-ocid="login.error_state"
@@ -339,34 +744,89 @@ export default function Login() {
                   </div>
 
                   <div>
-                    <label
-                      htmlFor="reg-password"
-                      style={{
-                        display: "block",
-                        fontWeight: 600,
-                        color: "var(--brown-dark)",
-                        fontSize: "0.85rem",
-                        marginBottom: 6,
-                      }}
-                    >
-                      Password *
+                    <label htmlFor="reg-phone" style={labelStyle}>
+                      Phone
                     </label>
-                    <input
-                      id="reg-password"
-                      className="form-input"
-                      type="password"
-                      placeholder="Min. 6 characters"
-                      value={regForm.password}
-                      onChange={(e) =>
-                        setRegForm((f) => ({ ...f, password: e.target.value }))
-                      }
-                      data-ocid="login.input"
-                    />
+                    <div style={{ position: "relative" }}>
+                      <Phone size={15} style={iconStyle} />
+                      <input
+                        id="reg-phone"
+                        type="tel"
+                        placeholder="10-digit mobile number"
+                        value={regForm.phone}
+                        onChange={(e) =>
+                          setRegForm((f) => ({ ...f, phone: e.target.value }))
+                        }
+                        style={inputStyle}
+                        onFocus={fieldFocus}
+                        onBlur={fieldBlur}
+                        data-ocid="login.input"
+                      />
+                    </div>
+                    {regErrors.phone && (
+                      <p
+                        style={{
+                          color: "#c0392b",
+                          fontSize: "0.75rem",
+                          marginTop: 4,
+                        }}
+                        data-ocid="login.error_state"
+                      >
+                        {regErrors.phone}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="reg-password" style={labelStyle}>
+                      Password
+                    </label>
+                    <div style={{ position: "relative" }}>
+                      <Lock size={15} style={iconStyle} />
+                      <input
+                        id="reg-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Min. 6 characters"
+                        value={regForm.password}
+                        onChange={(e) =>
+                          setRegForm((f) => ({
+                            ...f,
+                            password: e.target.value,
+                          }))
+                        }
+                        style={{ ...inputStyle, paddingRight: "3rem" }}
+                        onFocus={fieldFocus}
+                        onBlur={fieldBlur}
+                        data-ocid="login.input"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        style={{
+                          position: "absolute",
+                          right: 14,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          background: "none",
+                          border: "none",
+                          color: "#8b6914",
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                        data-ocid="login.toggle"
+                      >
+                        {showPassword ? (
+                          <EyeOff size={14} />
+                        ) : (
+                          <Eye size={14} />
+                        )}
+                      </button>
+                    </div>
                     {regErrors.password && (
                       <p
                         style={{
                           color: "#c0392b",
-                          fontSize: "0.78rem",
+                          fontSize: "0.75rem",
                           marginTop: 4,
                         }}
                         data-ocid="login.error_state"
@@ -376,32 +836,79 @@ export default function Login() {
                     )}
                   </div>
 
+                  <div>
+                    <label htmlFor="reg-confirm" style={labelStyle}>
+                      Confirm Password
+                    </label>
+                    <div style={{ position: "relative" }}>
+                      <Lock size={15} style={iconStyle} />
+                      <input
+                        id="reg-confirm"
+                        type={showConfirm ? "text" : "password"}
+                        placeholder="Repeat your password"
+                        value={regForm.confirm}
+                        onChange={(e) =>
+                          setRegForm((f) => ({ ...f, confirm: e.target.value }))
+                        }
+                        style={{ ...inputStyle, paddingRight: "3rem" }}
+                        onFocus={fieldFocus}
+                        onBlur={fieldBlur}
+                        data-ocid="login.input"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirm((v) => !v)}
+                        style={{
+                          position: "absolute",
+                          right: 14,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          background: "none",
+                          border: "none",
+                          color: "#8b6914",
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                        data-ocid="login.toggle"
+                      >
+                        {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                    {regErrors.confirm && (
+                      <p
+                        style={{
+                          color: "#c0392b",
+                          fontSize: "0.75rem",
+                          marginTop: 4,
+                        }}
+                        data-ocid="login.error_state"
+                      >
+                        {regErrors.confirm}
+                      </p>
+                    )}
+                  </div>
+
                   <button
                     type="submit"
+                    style={{ ...goldBtn, opacity: registering ? 0.75 : 1 }}
                     disabled={registering}
-                    className="btn-gold"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 8,
-                      opacity: registering ? 0.7 : 1,
-                    }}
                     data-ocid="login.submit_button"
                   >
                     {registering ? (
-                      <Loader2 size={16} className="animate-spin" />
+                      <>
+                        <Loader2 size={16} className="animate-spin" /> Creating…
+                      </>
                     ) : (
-                      <UserPlus size={16} />
+                      "Sign Up"
                     )}
-                    {registering ? "Creating…" : "Create Account"}
                   </button>
 
                   <p
                     style={{
                       textAlign: "center",
-                      color: "var(--brown-light)",
                       fontSize: "0.82rem",
+                      color: "#8b6914",
+                      margin: 0,
                     }}
                   >
                     Already have an account?{" "}
@@ -411,9 +918,9 @@ export default function Login() {
                       style={{
                         background: "none",
                         border: "none",
-                        color: "var(--gold)",
-                        cursor: "pointer",
+                        color: "#c7a24b",
                         fontWeight: 700,
+                        cursor: "pointer",
                         fontSize: "0.82rem",
                       }}
                       data-ocid="login.tab"
@@ -430,6 +937,3 @@ export default function Login() {
     </div>
   );
 }
-
-// Suppress unused import warning
-export { Link };

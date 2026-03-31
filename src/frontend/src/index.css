@@ -467,3 +467,33 @@
     padding: 3.5rem 0;
   }
 }
+
+/* ===== Responsive Enhancements ===== */
+
+/* Hero section mobile */
+@media (max-width: 640px) {
+  .hero-section {
+    min-height: auto;
+    padding: 5rem 0 3rem;
+  }
+}
+
+/* Buttons - slightly reduced padding on mobile */
+@media (max-width: 480px) {
+  .btn-gold,
+  .btn-gold-outline {
+    padding: 0.65rem 1.4rem;
+    font-size: 0.88rem;
+  }
+
+  /* Product card image height on small screens */
+  .product-card img {
+    height: 220px !important;
+    object-fit: cover;
+  }
+}
+
+/* Footer word break to prevent long text overflow */
+.footer {
+  word-break: break-word;
+}
